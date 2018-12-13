@@ -1,0 +1,126 @@
+---
+- hosts: all
+  vars:
+    LocalPath: "{{ playbook_dir }}"
+    RemoteTMP: "/tmp"
+  tasks:
+  - name: Make sure the user {{ ansible_user_id }} has SUDO permissions
+    shell: whoami
+    become: true
+    register: shellout
+  - name: Make sure the {{ RemoteTMP }} directory is writeable for our user
+    shell: touch {{ RemoteTMP }}/test
+    register: tmptest
+  - fail:
+      msg: "{{ RemoteTMP }} is not writable for our user. please use another location"
+    when: tmptest.stdout.find('Permission Denied') != -1
+  - name: Clean Up Touched File
+    shell: rm {{ RemoteTMP }}/test
+    when: tmptest.stdout.find('Permission Denied') == -1
+
+- hosts: deployTarget
+  vars:
+    LocalPath: "{{ playbook_dir }}"
+    RemoteTMP: "/tmp"
+  tasks:
+  - name: Create the Ansible Files Directory
+    file:
+      path: "{{ LocalPath }}/ansible_files/"
+      state: directory
+#do the same thing on all hosts for post doc information      
+- hosts: all
+  vars:
+    RemoteTMP: "/tmp"
+    inventoryFILE: inventory.ini 
+    varsFILE: vars.yml
+    infoFILE: "{{ RemoteTMP }}/{{ inventory_hostname }}/{{ inventory_hostname }}info.txt"
+    rpmFILE: "{{ RemoteTMP }}/{{ inventory_hostname }}/{{ inventory_hostname }}rpm.txt"
+    serviceFILE: "{{ RemoteTMP }}/{{ inventory_hostname }}/{{ inventory_hostname }}services.txt"
+
+  tasks:
+  - name: Make a directory on each remote host for files
+    file: 
+      path: "{{ RemoteTMP }}/{{ inventory_hostname }}"
+      state: directory
+
+  - name: Get OS Type (SUSE/RHEL)
+    shell: cat /etc/os-release | awk '{print $0; exit}'
+    register: OS_OUT
+    
+  - name: Get the Hostname of each host
+    shell: hostname -f >> "{{ infoFILE }}"
+
+  - name: Get the IP Address of each host
+    shell: hostname -i >> "{{ infoFILE }}"
+
+  - name: Get the number of cores on each host
+    shell: echo "Cores=" >> "{{ infoFILE }}"; nproc >> "{{ infoFILE }}"
+
+  - name: Get the amount of RAM on each host
+    shell: free -h >> "{{ infoFILE }}"
+
+  - name: Retrieve RPM information for post documentation
+    shell: rpm -qa | grep sas >> "{{ rpmFILE }}"
+
+  - name: Collect information about sas-viya-all-services (RHEL)
+    become: true
+    shell: service sas-viya-all-services >> "{{ serviceFILE }}"
+    when:  OS_OUT.stdout == "NAME=\"Red Hat Enterprise Linux Server\""
+
+  - name: Collect information about sas-viya-all-services (SUSE)
+    become: true
+    shell: /etc/init.d/sas-viya-all-services status >> "{{ serviceFILE }}"
+    when:  OS_OUT.stdout == "NAME=\"SLES\""
+
+#do a few things on certain hosts
+- hosts: httpproxy
+  vars:
+    RemoteTMP: "/tmp"
+    urlsFILE: "{{ RemoteTMP }}/{{ inventory_hostname }}/{{ inventory_hostname }}urls.txt"
+  tasks:
+  - name: Gather all of the URLS from the Environment
+    shell: ansible httpproxy -m shell -a 'host=`hostname -f` ; cat /etc/httpd/conf.d/proxy.conf | grep ProxyPass | grep -e '/SAS' -e 'shared' | awk  "{print \$2}" | sort | uniq  | sed "s/^/https:\/\/"$host"/" ' >> {{ urlsFILE }}; cat {{ urlsFILE }}
+    register: URLS
+  - name: Display all the URLS collect previously
+    debug: var=URLS.stdout_lines
+
+
+- hosts: CoreServices
+  vars:
+    RemoteTMP: "/tmp"
+    identFILE: "{{ RemoteTMP }}/{{ inventory_hostname }}/{{ inventory_hostname }}identities.txt"
+  tasks:
+    - name: get the LDAP information
+      shell: source /opt/sas/viya/config/consul.conf; export CONSUL_HTTP_TOKEN=$(sudo cat /opt/sas/viya/config/etc/SASSecurityCertificateFramework/tokens/consul/default/client.token); /opt/sas/viya/home/bin/sas-bootstrap-config kv read --recurse config | grep sas.identities >> {{identFILE}}
+
+
+- hosts: all
+  vars:
+    LocalPath: "{{ playbook_dir }}"
+    RemoteTMP: "/tmp"
+  tasks:
+  - name: Pull  all files to the ansible controller.
+    synchronize:
+      mode: pull
+      src: "{{ RemoteTMP }}/{{ inventory_hostname }}"
+      dest: "{{ LocalPath }}/ansible_files"
+     
+  - name: Clean up remote files
+    shell: rm -rf {{ RemoteTMP }}/{{ inventory_hostname }}
+
+- hosts: deployTarget
+  vars:
+    RemoteTMP: "/tmp"
+    LocalPath: "{{ playbook_dir }}"
+    installFilePath: /home/viyadep/install/sas_viya_playbook
+    inventoryFILE: "{{ playbook_dir }}/inventory.ini" 
+    varsFILE: "{{ playbook_dir }}/vars.yml"
+  tasks: 
+  - name: Copy Inventory File to {{ LocalPath }}/ansible_files
+    shell: cp {{ inventoryFILE }} {{ LocalPath }}/ansible_files/inventory.ini
+  - name: Copy Vars.yml to {{ LocalPath }}/ansible_files
+    shell: cp {{ varsFILE }} {{ LocalPath }}/ansible_files/vars.yml
+  - name: TAR the {{ LocalPath }}/ansible_files directory
+    shell: cd {{ LocalPath }}; tar -zcf {{ LocalPath }}/STIC_Post_Install.tar.gz ansible_files 
+  - name: Clean up {{ LocalPath }}/ansible_files directory
+    shell: rm -rf {{ LocalPath }}/ansible_files
