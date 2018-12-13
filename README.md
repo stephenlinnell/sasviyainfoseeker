@@ -1,17 +1,5 @@
 
-
-
-
-
-== Stephen Linnell (stlinn) ==
-----
-I am Stephen Linnell, an Associate Technical Consultant for the [http://smteam.sas.com/psd/USTechDM/us-stic/SitePages/Home.aspx US STIC] team. I started at SAS in 2015 as an Intern eventually ending up in the 2017 Technical Enablement Academy for Consulting, where I joined my current role.  My primary focus is SAS Viya deployments, helping customers from the prerequisite work all the way to validating a successful deployment.
-[mailto:stephen.linnell@sas.com Email]
-----
-== SAS Viya ==
-----
 === Ansible Script- SAS Viya Information Seeker ===
-
 On our team, we not only complete and validate a deployment, but we also document what was completed in the deployment.  This calls for the deployment specialist to collect information about the environment before ending the engagement with the customer.  Some of this information includes; hostnames, IP adresses, resource sizes, SAS Viya Service locations etc.  To streamline the collection of all of this information we have developed an Ansible Playbook to create a single file for the consultant to review when preparing Post Deployment Documentation.
 ----
 ==== Supported Operating Systems ====
@@ -50,15 +38,19 @@ Additionally this playbook will copy '''vars.yml''' and '''inventory.ini''' to t
 ==== Executing the Ansible-Playbook ====
 ----
     ansible-playbook viya-info-seeker.yml
-
 To run this playbook with a user that has a sudo password use the following to execute:
+    
     ansible-playbook viya-info-seeker.yml --ask-become-pass
 To run this playbook with a user that has an ssh password use the following to execute:
-    ansible-playbook viya-info-seeker.yml --ask-pass
+    
+    ansible-playbook viya-info-seeker.yml --ask-pass  
 To overwrite the location of temporary files use the following to execute: (Note this location must be present on all hosts)
+    
     ansible-playbook viya-info-seeker.yml -e "RemoteTMP=/tmp/location/"
 To overwrite where to save the .tar.gz file use the following to execute:
+    
     ansible-playbook viya-info-seeker.yml -e "LocalPATH=/home/myuser/location"
 Example of combining all of the above:
+    
     ansible-playbook viya-info-seeker.yml --ask-become-pass --ask-pass -e "RemoteTMP=/tmp/location/ LocalPATH=/home/myuser/location"
 
