@@ -10,21 +10,21 @@ Supported Operating Systems
 
 Information collected by the SAS Viya Information Seeker
 --
-The following information will be retrieved from each Ansible host listed in inventory.ini ('''inventoryname''' refers to the name given for each host in inventory.ini)
-* '''inventoryname/''' - A directory for each host in the environment containing:
-** '''inventoryname'''rpm.txt - A text file with ALL SAS Viya RPMS installed on the host 
-** '''inventoryname'''services.txt - A text file with ALL SAS Viya Serivces with their current status
-** '''inventoryname'''info.txt - A text file with the following information
+The following information will be retrieved from each Ansible host listed in inventory.ini (**inventoryname** refers to the name given for each host in inventory.ini)
+* **inventoryname** - A directory for each host in the environment containing:
+** **inventoryname**rpm.txt - A text file with ALL SAS Viya RPMS installed on the host 
+** **inventoryname**services.txt - A text file with ALL SAS Viya Serivces with their current status
+** **inventoryname**info.txt - A text file with the following information
 *** Hostname (the result of hostname -f)
 *** IP Address (the result of hostname -i)
 *** Number of cores on the host (the result of nproc)
 *** Amount of RAM on the machine (the result of free -h)
 
 This playbook will generate files that contain the following from the hosts that contain an instance of the Identities and HTTP Proxy Services
-* '''inventoryname'''identities.txt - A text file with all fields from the SAS Viya Identities Configuration
-* '''inventoryname'''urls.txt - A text file with all ACTIVE URLs for the current environment
+* **inventoryname**identities.txt - A text file with all fields from the SAS Viya Identities Configuration
+* **inventoryname**urls.txt - A text file with all ACTIVE URLs for the current environment
 
-Additionally this playbook will copy '''vars.yml''' and '''inventory.ini''' to the location for packaging
+Additionally this playbook will copy **vars.yml** and **inventory.ini** to the location for packaging
 
 Getting Started with the SAS Viya Information Seeker
 --
