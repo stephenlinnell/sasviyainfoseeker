@@ -18,7 +18,7 @@
     shell: rm {{ RemoteTMP }}/test
     when: tmptest.stdout.find('Permission Denied') == -1
 
-- hosts: deployTarget
+- hosts: localhost
   vars:
     LocalPath: "{{ playbook_dir }}"
     RemoteTMP: "/tmp"
@@ -73,7 +73,7 @@
     when:  OS_OUT.stdout == "NAME=\"SLES\""
 
 #do a few things on certain hosts
-- hosts: httpproxy
+- hosts: localhost
   vars:
     RemoteTMP: "/tmp"
     urlsFILE: "{{ RemoteTMP }}/{{ inventory_hostname }}/{{ inventory_hostname }}urls.txt"
@@ -108,7 +108,7 @@
   - name: Clean up remote files
     shell: rm -rf {{ RemoteTMP }}/{{ inventory_hostname }}
 
-- hosts: deployTarget
+- hosts: localhost
   vars:
     RemoteTMP: "/tmp"
     LocalPath: "{{ playbook_dir }}"
