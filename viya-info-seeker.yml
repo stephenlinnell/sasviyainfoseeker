@@ -73,13 +73,13 @@
     when:  OS_OUT.stdout == "NAME=\"SLES\""
 
 #do a few things on certain hosts
-- hosts: localhost
+- hosts: httpproxy
   vars:
     RemoteTMP: "/tmp"
     urlsFILE: "{{ RemoteTMP }}/{{ inventory_hostname }}/{{ inventory_hostname }}urls.txt"
   tasks:
   - name: Gather all of the URLS from the Environment
-    shell: ansible httpproxy -m shell -a 'host=`hostname -f` ; cat /etc/httpd/conf.d/proxy.conf | grep ProxyPass | grep -e '/SAS' -e 'shared' | awk  "{print \$2}" | sort | uniq  | sed "s/^/https:\/\/"$host"/" ' >> {{ urlsFILE }}; cat {{ urlsFILE }}
+    shell: host=`hostname -f` ; cat /etc/httpd/conf.d/proxy.conf | grep ProxyPass | grep -e '/SAS' -e 'shared' | awk  "{print \$2}" | sort | uniq  | sed "s/^/https:\/\/"$host"/" >> {{ urlsFILE }}; cat {{ urlsFILE }}
     register: URLS
   - name: Display all the URLS collect previously
     debug: var=URLS.stdout_lines
